@@ -1,14 +1,10 @@
-import requests
-import pandas
+import lib as lib
 
-TBA_Auth_Key = "aiQP5YMSkLerl0ibDSmM77GSDr3tVc9fZr9LIw7fL8AknFM1XuMZRgFtlEMttcBf"
-url = "https://www.thebluealliance.com/api/v3/team/frc4661"
-header = {
-	'accept': 'application/json',
-	'X-TBA-Auth-Key': TBA_Auth_Key,
-	'User-Agent': 'scouting app'
-}
+url = "https://www.thebluealliance.com/api/v3/team/frc"
 
 if __name__ == "__main__":
-	info = requests.get(url, headers=header)
-	print(info.json())
+	team_number = input("enter team number: ")
+	info = lib.get_info(url + team_number)
+	print(info)
+	events = lib.get_team_status_avg(team_number, 2023)
+	print(events)
