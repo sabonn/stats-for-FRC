@@ -1,33 +1,33 @@
 import requests
 import json
 
-TBA_Auth_Key = "aiQP5YMSkLerl0ibDSmM77GSDr3tVc9fZr9LIw7fL8AknFM1XuMZRgFtlEMttcBf"
-header = {
+TBA_Auth_Key = "aiQP5YMSkLerl0ibDSmM77GSDr3tVc9fZr9LIw7fL8AknFM1XuMZRgFtlEMttcBf"#auth key for the blue alliance data base
+header = {#header format for the get requests
     'accept': 'application/json',
     'X-TBA-Auth-Key': TBA_Auth_Key,
     'User-Agent': 'scouting app'
 }
 
-def on_load(event_key):
-    game_history = {
+def on_load(event_key):#updating and creating the database
+    game_history = {#storing match key's
         'games': [
             'something',
 
         ],
     }
 
-    json_data = {
+    json_data = {#general data
         'teams': [],
     }
 
     teams = get_info(f'https://www.thebluealliance.com/api/v3/event/{event_key}/teams/keys')
-    try:
+    try:#checking if we have connection with the TBA database
         teams['Error']
         print('** Data Faild **')
         return
     except:
         print('** Data Granted **')
-    for team in teams:
+    for team in teams:#updating the teams in the database(going to update this for loop soon)
         json_data['teams'].append({
             'key': team,
             'auto_T': 0,
@@ -81,6 +81,15 @@ def update_db(event_key):
     except:
         print('** Update Data Faild **')
 
+
+def update_game_history(game_history):
+    with open('game.json', 'w') as game_data:
+        json.dump(game_history, game_data)
+
+def update_game_data(game_data):
+    with open('data.json', 'w') as json_data:
+        json.dump(game_data, json_data)
+
 def get_db():
     current_data = {'Error': 'no data from file'}
     with open('data.json', 'r') as data:
@@ -93,26 +102,16 @@ def get_game_history():
         current_game_history = json.load(data)
     return current_game_history
 
-def update_game_history(game_history):
-    with open('game.json', 'w') as game_data:
-        json.dump(game_history, game_data)
-
-def update_game_data(game_data):
-    with open('data.json', 'w') as json_data:
-        json.dump(game_data, json_data)
-
-def get_db_team(team_key):
-    current_data = {}
-    with open('data.json', 'r') as data:
-        current_data = json.load(data)
-
+def get_db_team(team_key):#getting the index of a team in the data base
+    current_data = get_db()
+    
     for i, elem in enumerate(current_data['teams']):
         if elem['key'] == team_key:
             return i
 
     return -1
 
-def get_info(url):
+def get_info(url):#function for get requests from the database
     info = requests.get(url, headers=header)
     json = info.json()
     try:
@@ -121,10 +120,9 @@ def get_info(url):
     except:
         return json
 
-def search_data(team, search_in_data, search, current_data, data, community):
+def search_data(team, search_in_data, search, current_data, data, community): #getting data on a match and the teams in the match
     cone_count = 0
     cube_count = 0
-    old_data = current_data
 
     for i in range(3):
         cone_count = data['score_breakdown'][team][community][search[i]].count('Cone')
@@ -137,5 +135,3 @@ def search_data(team, search_in_data, search, current_data, data, community):
         if data['score_breakdown'][team][f'endGameChargeStationRobot{i+1}'] == 'Docked':
             current_data['teams'][get_db_team(data['alliances'][team]['team_keys'][i])]['tele_Dock'] += 1
     return current_data
-
-
