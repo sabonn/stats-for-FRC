@@ -9,27 +9,45 @@ header = {#header format for the get requests
 }
 
 def on_load(event_key):#updating and creating the database
+    
     game_history = {#storing match key's
-        'games': [
-            'something',
-
-        ],
+        'games': [],
     }
 
     json_data = {#general data
         'teams': [],
+        'keys': []
     }
 
     teams = get_info(f'https://www.thebluealliance.com/api/v3/event/{event_key}/teams/keys')
+    current_data = get_db()
+    current_game_history = get_game_history()
+    
+    try:
+        current_data['Error']
+        print('** DataBase Faild **')
+        return
+    except:
+        print('** DataBase Granted **')
+
+    try:
+        current_game_history['Error']
+        print('** Game History Faild **')
+        return
+    except:
+        print('** Game History Granted **')
+    
     try:#checking if we have connection with the TBA database
         teams['Error']
         print('** Data Faild **')
         return
     except:
         print('** Data Granted **')
+    
     for team in teams:#updating the teams in the database(going to update this for loop soon)
+        if team in current_data['keys']:
+            continue
         json_data['teams'].append({
-            'key': team,
             'auto_T': 0,
             'auto_M': 0,
             'auto_B': 0,
@@ -39,9 +57,17 @@ def on_load(event_key):#updating and creating the database
             'tele_B': 0,
             'tele_Dock': 0,
             })
+        json_data['keys'].append(team)
 
-    update_game_data(json_data)
+    current_data['teams'].extend(json_data['teams'])
+    current_data['keys'].extend(json_data['keys'])
+
+    update_game_data(current_data)
+    if len(current_game_history['games']) > 0:
+        print('** Existing History Confirmed **')
+        return
     update_game_history(game_history)
+    print('** No History Confirmed **')
 
 def update_db(event_key):
     data = get_info(f'https://www.thebluealliance.com/api/v3/event/{event_key}/matches')
@@ -104,12 +130,11 @@ def get_game_history():
 
 def get_db_team(team_key):#getting the index of a team in the data base
     current_data = get_db()
-    
-    for i, elem in enumerate(current_data['teams']):
-        if elem['key'] == team_key:
-            return i
-
-    return -1
+    try:
+        current_data['keys'].index(team_key)
+    except:
+        return -1
+    return current_data['keys'].index(team_key)
 
 def get_info(url):#function for get requests from the database
     info = requests.get(url, headers=header)
@@ -123,6 +148,8 @@ def get_info(url):#function for get requests from the database
 def search_data(team, search_in_data, search, current_data, data, community): #getting data on a match and the teams in the match
     cone_count = 0
     cube_count = 0
+
+    #need to add more saftey to the searching in the for loop
 
     for i in range(3):
         cone_count = data['score_breakdown'][team][community][search[i]].count('Cone')
